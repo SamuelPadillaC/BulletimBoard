@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title> A chat tool by Samuelito Perro </title>
+    <style>
+    body {font-family: Helvetica;
+    color: black;
+    background-color: antiquewhite;
+    }
+    #posts {font-size: 18pt;
+    width: 630px;
+    margin: auto;
+    }
+    #DMs {display: none;
+    font-size: 18pt;
+    width: 630px;
+    margin: auto;
+    }
+    #newmessage {text-decoration: underline;
+    }
+    #NumNewMessage {color: red;
+    font-weight: bold;
+    }
+    #MessageList {text-align: center;
+    width: 80%;
+    border: 1px solid black;
+    margin: auto;
+    }
+    .dia {font-size: 10pt;
+    font-family: serif;
+    color: crimson;
+    }
+    .UsName {font-size: 10pt;
+    font-family: serif;
+    color: crimson;
+    }
+    .DMName {font-size: 12pt;
+    font-weight: bold;
+    }
+    #inputs {width: 320px;
+    margin: 50px auto 50px;
+    color: black;
+    font-size: 20pt;
+    text-align: center;
+    }
+    h3 {color: crimson;
+    font-size: 25pt;
+    }
+    button {margin: Auto;
+    margin-top: 5px;
+    border-color: blue;
+    font-weight: bold;
+    cursor: pointer;
+    }
+    #postinpt {display: none;
+    }
+    #in {display: none;
+    width: 600px;
+    margin: auto;
+    }
+    #PMess {display: none;
+    width: 600px;
+    margin: auto;
+    }
+    .senders {font-weight: bold;
+    color: crimson;
+    }
+    input {margin-bottom: 5px;}
+    hr {clear: both;
+    width: 85%;
+    }
+    #tophr {margin-top: 190px;}
+    #post {display: none;}
+    #clear {display: none;}
+    #refresh {display: none;}
+    #SelectUsers, #SelectUsers2 {width: 150px;
+    margin: auto;
+    }
+    .fltl {float: left;
+    width: 30%;
+    clear: none;
+    margin-top: 20px;
+    }
+    .fltr {float: right;
+    width: 30%;
+    clear: none;
+    margin-top: 20px;
+    }
+    .center {text-align: center;
+    font-size: 11pt;
+    font-weight: normal;}
+    .small {font-size: 10pt;
+    }
+    #registration {display: none;
+    width: 250px;
+    margin: 50px auto 50px;
+    color: black;
+    font-size: 16pt;
+    text-align: center;
+    }
+    #clearNot {float: right;
+    margin-right: 10%;
+    }
+    #admin {display: none;}
+    #AdminDiv {display: none;
+    width: 320px;
+    margin: auto;
+    }
+    </style>
+    <script src="js/ajx.js"></script>
+    <script>
+  /*********************
+  APPLICATION NAME SPACE
+  *********************/
+
+  var appns = {};
+
+  /*******************
+  SUBMIT FUNCTION
+  *******************/
+  appns.SubmitData = function ()
+  {
+    document.getElementById("inpt1").focus();
+    var Post = document.getElementById("inpt1").value,
+    Name = document.getElementById("name").value;
+    url = "Z_cgi-bin/A28.1.cgi",
+    data = Name
+          + "\n"
+          + Post
+          + "\n";
+
+    ajx.AjaxProcess(url, data, appns.PostMessage);
+  }
+
+  ////////////////////////////////
+  appns.PostMessage = function (respTxt)
+  {
+    var cert = respTxt.split("|");
+    if (cert[0] === "-")
+    {
+     alert(cert[1]);
+     return;
+    }
+    else if (cert[0] === "o")
+    {
+      alert (cert[1]);
+      return;
+    }
+    else if (cert[0] === "+")
+    {
+      document.getElementById("posts").innerHTML = cert[1];
+    }
+    else if (cert[0] === "w")
+    {
+      alert (cert[1]);
+      return;
+    }
+    else if (cert[0] === "0")
+    {
+      document.getElementById("posts").innerHTML = "";
+    }
+    else
+    {
+      alert("A really bad error just happened in the Server");
+      return;
+    }
+  }
+
+  appns.Clear = function ()
+  {
+    if (confirm ("You are about to delete the bulletin board \n Are you sure you want to continue?"))
+    {
+      document.getElementById("inpt1").focus();
+      var url = "Z_cgi-bin/A28.1-clea.cgi",
+      data;
+      ajx.AjaxProcess(url, data, appns.PostMessage);
+    }
+    else
+    {
+      return;
+    }
+  }
+
+  appns.Refresh = function ()
+  {
+    document.getElementById("inpt1").focus();
+    var url = "Z_cgi-bin/A28.1-ref.cgi",
+    data;
+
+    ajx.AjaxProcess(url, data, appns.PostMessage);
+  }
+
+  ////// RETURN ///////
+  appns.ReturnMain = function ()
+  {
+    document.getElementById("in").style.display = "block";
+    document.getElementById("PMess").style.display = "none";
+    document.getElementById("AdminDiv").style.display = "none";
+  }
+  /*****************
+  LOGIN FUNCTION
+  *****************/
+  appns.Login = function ()
+  {
+    var Pwd = document.getElementById("pwd").value;
+    Name = document.getElementById("name").value;
+    url = "Z_cgi-bin/A28.1-Log.cgi",
+    data = Name
+          + "\n"
+          + Pwd
+          + "\n";
+
+    if ((Pwd === "") || (Name === ""))
+    {
+      alert("Please enter a password and a username");
+      return;
+    }
+    ajx.AjaxProcess(url, data, appns.LoginResp);
+  }
+
+  appns.LoginResp = function (LoginResp)
+  {
+    var resp = LoginResp.split("[");
+    var Messagers = [];
+    var Checker = 0;
+    document.getElementById("MessageList").innerHTML = "No new messages.";
+    if (resp[0] === "R")
+    {
+      document.getElementById("inputs").style.display = "none";
+      document.getElementById("in").style.display = "block";
+      document.getElementById("refresh").style.display = "block";
+    }
+    else if (resp[0] === "P")
+    {
+      document.getElementById("inputs").style.display = "none";
+      document.getElementById("in").style.display = "block";
+      document.getElementById("refresh").style.display = "block";
+      document.getElementById("post").style.display = "block";
+      document.getElementById("postinpt").style.display = "block";
+    }
+    else if (resp[0] === "A")
+    {
+      document.getElementById("inputs").style.display = "none";
+      document.getElementById("in").style.display = "block";
+      document.getElementById("refresh").style.display = "block";
+      document.getElementById("post").style.display = "block";
+      document.getElementById("postinpt").style.display = "block";
+      document.getElementById("clear").style.display = "block";
+      document.getElementById("admin").style.display = "block";
+    }
+    else if (resp[0] === "-")
+    {
+      alert (resp[1]);
+      return;
+    }
+    else if (resp[0] === "w")
+    {
+      alert (resp[1]);
+      return;
+    }
+
+    if (resp[1] != "0")
+    {
+      var senders = resp[1].split("|");
+      document.getElementById("MessageList").innerHTML = "You Have <span id=\"NumNewMessage\"> " + senders[0] + " </span> new message(s). <br> Sent by: <br>";
+      Messagers.push(senders[1]);
+
+      //Making sure the user only appears one
+      for (var i = 0; i < senders.length; i++)
+      {
+        //Checking each sender with the rest of the array
+        for (var z = 0; z < Messagers.length; z++)
+        {
+          //If sender exists in array or isaN break
+          if ((Messagers[z] === senders[i]) || (isNaN(senders[i]) === false))
+          {
+            break;
+          }
+          else
+          {
+            //Edit Checker
+            Checker++;
+          }
+        }
+        //If checked every value for the array - add and reset
+        if (Checker === Messagers.length)
+        {
+          Messagers.push(senders[i]);
+          Checker = 0;
+        }
+        else {
+          Checker = 0;
+        }
+      }
+    }
+
+    //Output
+    for (var i = 0; i < Messagers.length; i++)
+    {
+      document.getElementById("MessageList").innerHTML += "<span class=\"senders\">" + Messagers[i] + "</span><br>";
+    }
+
+    //Call initialization in case someone created a new account
+    appns.initialization();
+  }
+  //////QUIT FUNCTION//////////
+  appns.Quit = function ()
+  {
+    document.getElementById("inputs").style.display = "block";
+    document.getElementById("in").style.display = "none";
+    document.getElementById("refresh").style.display = "none";
+    document.getElementById("post").style.display = "none";
+    document.getElementById("postinpt").style.display = "none";
+    document.getElementById("clear").style.display = "none";
+    document.getElementById("registration").style.display = "none";
+    document.getElementById("AdminDiv").style.display = "none";
+    document.getElementById("admin").style.display = "none";
+    document.getElementById("PMess").style.display = "none";
+  }
+  /////Register//////
+  appns.Register = function ()
+  {
+    document.getElementById("inputs").style.display = "none";
+    document.getElementById("registration").style.display = "block";
+  }
+  /////Display Admin//////
+  appns.DisplayAdmin = function ()
+  {
+    document.getElementById("in").style.display = "none";
+    document.getElementById("AdminDiv").style.display = "block";
+  }
+
+  /*****************
+  ADMINISTRATE FUNCTION
+  *****************/
+  appns.SubmitAdmin = function ()
+  {
+    var AName = document.getElementById("AdmName").value,
+    Actions = document.getElementsByName("Adm"),
+    Permissions = document.getElementsByName("NewPerm");
+
+    ////Checking for complete inputs
+    if ( AName === "")
+    {
+      alert ("Please enter a Username to administrate");
+      return;
+    }
+    if((Actions[0].checked === false) && (Actions[1].checked === false))
+    {
+      alert("Please select what you want to do with the user.");
+      return;
+    }
+    if (Actions[0].checked)
+    {
+      if ((Permissions[0].checked === false) && (Permissions[1].checked === false))
+      {
+        alert("If you want to change permissions, please select a new permission");
+        return;
+      }
+    }
+
+    ///Defining Actions to send
+    var TheAction,
+    ThePermission;
+    if (Actions[0].checked)
+    {
+      TheAction = Actions[0].value;
+    }
+    else if (Actions[1].checked)
+    {
+      TheAction = Actions[1].value;
+    }
+
+    if (Permissions[0].checked)
+    {
+      ThePermission = Permissions[0].value;
+    }
+    else if (Permissions[1].checked)
+    {
+      ThePermission = Permissions[1].value;
+    }
+
+    //Defining Stuff to send
+    url = "Z_cgi-bin/A28.1-Adm.cgi";
+    data = AName
+          + "\n"
+          + TheAction
+          + "\n"
+          + ThePermission
+          + "\n";
+
+    ajx.AjaxProcess(url, data, appns.AdmResponse);
+  }
+
+  appns.AdmResponse = function (AdmResp)
+  {
+    var cert = AdmResp.split("|");
+
+    if (cert[0] === "-")
+    {
+     alert(cert[1]);
+     return;
+    }
+    else if (cert[0] === "w")
+    {
+      alert (cert[1]);
+      return;
+    }
+    else if (cert[0] === "+")
+    {
+      alert (cert[1]);
+      document.getElementById("inputs").style.display = "none";
+      document.getElementById("AdminDiv").style.display = "none";
+      document.getElementById("in").style.display = "block";
+      document.getElementById("refresh").style.display = "block";
+      document.getElementById("post").style.display = "block";
+      document.getElementById("postinpt").style.display = "block";
+      document.getElementById("clear").style.display = "block";
+      document.getElementById("admin").style.display = "block";
+    }
+  }
+
+  /*****************
+  REGISTRATION FUNCTION
+  *****************/
+  appns.SignIn = function ()
+  {
+    var Name = document.getElementById("Rname").value,
+    passwd1 = document.getElementById("Rpass").value,
+    passwd2 = document.getElementById("Rpass2").value,
+    url = "Z_cgi-bin/A28.1-Reg.cgi",
+    data = Name
+          + "\n"
+          + passwd1
+          + "\n";
+
+    if (Name === "")
+    {
+      alert("Please insert a username");
+      return;
+    }
+    if (passwd1 != passwd2)
+    {
+      alert("The passwords do not match");
+      return;
+    }
+
+  ajx.AjaxProcess(url, data, appns.RegResp);
+  }
+
+  appns.RegResp = function (RegResponse)
+  {
+    var cert = RegResponse.split("|");
+    if (cert[0] === "-")
+    {
+     alert(cert[1]);
+     return;
+    }
+    else if (cert[0] === "w")
+    {
+      alert (cert[1]);
+      return;
+    }
+    else if (cert[0] === "+")
+    {
+      document.getElementById("inputs").style.display = "block";
+      document.getElementById("registration").style.display = "none";
+    }
+  }
+
+
+  /*************
+  USERS FILTER
+  *************/
+  appns.UsersFilter = function ()
+  {
+    var User = document.getElementById("SelectUsers").value;
+
+    if (User === "")
+    {
+      return;
+    }
+
+    url = "Z_cgi-bin/A28.1-Filt.cgi",
+    data = User
+          + "\n";
+
+    ajx.AjaxProcess(url, data, appns.FilterResp);
+  }
+
+  appns.FilterResp = function (respTxt)
+  {
+    var cert = respTxt.split("|");
+    if (cert[0] === "+")
+    {
+      document.getElementById("posts").innerHTML = cert[1];
+    }
+    else if (cert[0] === "w")
+    {
+      alert (cert[1]);
+      return;
+    }
+  }
+
+
+  /*****************
+  PERSONAL MESSAGES
+  ******************/
+  appns.GoPersonal = function ()
+  {
+    document.getElementById("in").style.display = "none";
+    document.getElementById("DMs").style.display = "none";
+    document.getElementById("PMess").style.display = "block";
+    document.getElementById("DMs").innerHTML = "";
+  }
+
+  appns.SendDM = function ()
+  {
+    var Recepient = document.getElementById("SelectUsers2").value,
+    Sender = document.getElementById("name").value,
+    Message = document.getElementById("PersonalMessage").value,
+    url = "Z_cgi-bin/A28.1-DM.cgi"
+    data = Sender
+          + "\n"
+          + Recepient
+          + "\n"
+          + Message
+          + "\n";
+
+    if (Sender === "")
+    {
+      alert ("WTF happened?");
+      return;
+    }
+    else if (Recepient === "")
+    {
+      alert ("Please select a user to message");
+      return;
+    }
+    else if (Message === "")
+    {
+      alert("Please enter a message");
+      return;
+    }
+    if (Sender === Recepient)
+    {
+      alert ("You can't send a message to yourself \n Please select a different user");
+      return;
+    }
+
+    ajx.AjaxProcess(url, data, appns.DMResp);
+  }
+
+  appns.DMResp = function (respTxt)
+  {
+    var cert = respTxt.split("|");
+
+    if (cert[0] === "w")
+    {
+      alert (cert[1]);
+      return;
+    }
+    else if (cert[0] === "+")
+    {
+      document.getElementById("DMs").style.display = "block";
+      document.getElementById("DMs").innerHTML = cert[1];
+    }
+  }
+
+  appns.RefDM = function ()
+  {
+    var Receiver = document.getElementById("SelectUsers2").value,
+    Sender = document.getElementById("name").value,
+    url = "Z_cgi-bin/A28.1-DMref.cgi",
+    data = Sender
+          + "\n"
+          + Receiver
+          + "\n";
+
+    if (Receiver === "")
+    {
+      alert("Please slect a user to refresh your conversation.");
+      return;
+    }
+    if (Receiver === Sender)
+    {
+      alert("You can't have a conversation with yourself.\n Please select a different user");
+      return;
+    }
+
+    ajx.AjaxProcess(url, data, appns.DMResp);
+  }
+
+  appns.ClearNot = function ()
+  {
+    var User = document.getElementById("name").value,
+    Status = document.getElementById("MessageList").innerHTML;
+    url = "Z_cgi-bin/A28.1-DMclea.cgi",
+    data = User
+          + "\n";
+
+    if (Status === "No new messages.")
+    {
+      return;
+    }
+    else if (confirm ("Are you sure you want to delete your notifications?"))
+    {
+      ajx.AjaxProcess(url, data, appns.ClearDmResp);
+    }
+  }
+
+  appns.ClearDmResp = function (respTxt)
+  {
+    var cert = respTxt.split("|");
+
+    if (cert[0] === "w")
+    {
+      alert (cert[1]);
+      return;
+    }
+    else if (cert[0] === "+")
+    {
+      document.getElementById("MessageList").innerHTML = "No new messages."
+    }
+  }
+  /****************
+  ///Initialization///
+  ******************/
+  appns.UsersList = function (respTxt)
+  {
+    document.getElementById("SelectUsers").innerHTML = "<option value=\"\"> Select </option>";
+    document.getElementById("SelectUsers2").innerHTML = "<option value=\"\"> Select </option>";
+
+    var List = respTxt.split("\n");
+
+    //Putting the List of users in the Select Lists
+    for (var i = 0; i < List.length; i++)
+    {
+      document.getElementById("SelectUsers").innerHTML +=
+      "<option value=\"" + List[i] + "\">" + List[i] + "</option>";
+      document.getElementById("SelectUsers2").innerHTML +=
+      "<option value=\"" + List[i] + "\">" + List[i] + "</option>";
+    }
+  }
+  appns.initialization = function ()
+  {
+    AllUsers = [];
+    for (var i = 0; i < 2; i++)
+    {
+      document.getElementsByName("Adm")[i].checked = false;
+      document.getElementsByName("NewPerm")[i].checked = false;
+    }
+
+    //Sending request to CGI to get users in select list
+    var url = "Z_cgi-bin/A28.1-List.cgi",
+    data;
+
+    ajx.AjaxProcess(url, data, appns.UsersList);
+  }
+
+  /*****************
+  WINDOW ONLOAD PART
+  ******************/
+  window.onload = function()
+  {
+  appns.initialization ();
+  document.getElementById("login").addEventListener('click', appns.Login)
+  document.getElementById("post").addEventListener('click', appns.SubmitData);
+  document.getElementById("clear").addEventListener('click', appns.Clear);
+  document.getElementById("refresh").addEventListener('click', appns.Refresh);
+  document.getElementById("quit").addEventListener('click', appns.Quit);
+  document.getElementById("quit2").addEventListener('click', appns.Quit);
+  document.getElementById("quit3").addEventListener('click', appns.Quit);
+  document.getElementById("quit4").addEventListener('click', appns.Quit);
+  document.getElementById("register").addEventListener('click', appns.Register);
+  document.getElementById("signin").addEventListener('click', appns.SignIn);
+  document.getElementById("admin").addEventListener('click', appns.DisplayAdmin);
+  document.getElementById("SubmitAdm").addEventListener('click', appns.SubmitAdmin);
+  document.getElementById("SelectUsers").addEventListener('change', appns.UsersFilter);
+  document.getElementById("Personal").addEventListener('click', appns.GoPersonal);
+  document.getElementById("return").addEventListener('click', appns.ReturnMain);
+  document.getElementById("return2").addEventListener('click', appns.ReturnMain);
+  document.getElementById("SendDM").addEventListener('click', appns.SendDM);
+  document.getElementById("RefreshDm").addEventListener('click', appns.RefDM);
+  document.getElementById("clearNot").addEventListener('click', appns.ClearNot);
+  ///////////////////////
+  }
+    </script>
+  </head>
+  <body>
+    <hr id="tophr">
+    <div id="inputs">
+    <h3> Welcome My friend! </h3>
+    Username: <input type="text" size="15" id="name"><br>
+    Password: <input type="password" size="15" id="pwd"><br>
+    <button id="login" type="button"> Login </button>
+    <br><br>
+    <hr class="fltl"><span class="small"> Not a Member Yet? </span><hr class="fltr">
+    <button id="register" type="button"> Register </button>
+    </div>
+
+    <div id="in">
+      <span id="postinpt">
+        <strong>Add your post:</strong><br> <input id="inpt1" type="text" size="100">
+      </span>
+      <button id="post" type="button"> Post New Message </button>
+      <button id="refresh" type="button"> Refresh </button>
+      <button id="clear" type="button"> Clear </button><br>
+      <button id="admin" type="button"> Admin Users </button>
+      <br>
+      <p class="center">
+        New Feature: <strong>Check and send Personal messages!</strong><br>
+        <span id="newmessages"></span>
+        <button id="Personal"> Go to Personal Messages </button>
+      </p>
+      <br>
+      <p class="center">
+        Filter board by users:
+        <select id="SelectUsers">
+          <option value=""> Select </option>
+        </select>
+      </p>
+      <br>
+      <button id="quit" type="button"> Quit </button>
+      <br><br>
+      <hr>
+      <div id="posts">
+      </div>
+    </div>
+
+
+    <div id="PMess">
+      <div id="MessageList">
+        No new messages.
+      </div>
+      <button id="clearNot" type="button">Clear Notifications</button>
+      <br><br><br><br><br>
+
+      <strong>Select user to message/refresh:</strong><br>
+      <select id="SelectUsers2">
+        <option value=""> Select </option>
+      </select>
+      <br><br>
+      <strong>Add your message:</strong>
+      <input type="text" id="PersonalMessage" size="100">
+      <button id="SendDM" type="button"> Send </button>
+      <button id="RefreshDm" type="Button"> Refresh </button>
+
+      <br><br><br>
+      <button id="quit4" type="button"> Quit </button>
+      <button id="return" type="button"> Return </button>
+      <br><br>
+      <hr>
+      <div id="DMs">
+      </div>
+    </div>
+
+
+    <div id="AdminDiv">
+      Enter Username you want to administrate:<br>
+      <input type="text" size="30" id="AdmName"><br><br>
+      <input type="radio" id="ChP" name="Adm" value="Change"><label for="ChP"> <strong>Change Permissions to</strong>
+      </label><br>
+      <input type="radio" id="PermR" name="NewPerm" value="R"><label for="PermR"> Read
+      </label>
+      <input type="radio" id="PermP" name="NewPerm" value="P"><label for="PermP"> Post
+      </label>
+      <br><br>
+
+      <input type="radio" id="RmU" name="Adm" value="Remove"><label for="RmU"> <strong>Remove User</strong>
+      </label><br><br>
+      <button type="button" id="SubmitAdm"> Submit </button><br>
+      <button id="quit3" type="button"> Quit </button>
+      <button id="return2" type="button"> Return </button>
+    </div>
+
+
+
+    <div id="registration">
+      Enter your Username:
+      <input type="text" size="30" id="Rname"><br><br>
+      Enter your Password:
+      <input type="password" size="30" id="Rpass"><br>
+      Repeat your Password:
+      <input type="password" size="30" id="Rpass2"><br>
+      <button id="signin" type="button"> Sign In </button>
+      <button id="quit2" type="button"> Quit </button>
+    </div>
+    <hr>
+  </body>
+</html>
